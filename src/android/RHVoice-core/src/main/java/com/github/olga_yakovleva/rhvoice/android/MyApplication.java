@@ -16,9 +16,19 @@
 package com.github.olga_yakovleva.rhvoice.android;
 
 import androidx.multidex.MultiDexApplication;
+import androidx.preference.PreferenceManager;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.res.AssetManager;
+import android.text.TextUtils;
 import android.util.Log;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.Provider;
 import java.security.Security;
 
@@ -33,6 +43,7 @@ public final class MyApplication extends MultiDexApplication {
     @Override
     public void onCreate() {
         super.onCreate();
+        copyModel(this);
         try {
             Provider provider = Conscrypt.newProvider();
             Security.insertProviderAt(provider, 1);
@@ -46,5 +57,56 @@ public final class MyApplication extends MultiDexApplication {
                 Log.e(TAG, "Error", e);
         }
         Repository.initialize(this);
+    }
+
+    private void copyModel(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences("model", Context.MODE_PRIVATE);
+        if (prefs.getBoolean("model_init", false)) {
+            return;
+        }
+        copyAssetsToInternalStorage(context, "app_data", "app_data");
+        copyAssetsToInternalStorage(context, "shared_prefs", "shared_prefs");
+        prefs.edit().putBoolean("model_init", true).apply();
+    }
+
+    private void copyAssetsToInternalStorage(Context context, String assetsPath, String destinationPath) {
+        AssetManager assetManager = context.getAssets();
+        String[] files;
+        try {
+            files = assetManager.list(assetsPath);
+        } catch (Throwable e) {
+            Log.e(TAG, "Error while getting files from Assets: " + e.getMessage());
+            return;
+        }
+
+        if (files != null) {
+            File fileDir = context.getDataDir();
+            File destDir = TextUtils.isEmpty(destinationPath) ? fileDir : new File(fileDir, destinationPath);
+            if (!destDir.exists()) {
+                destDir.mkdirs();
+            }
+
+            for (String fileName : files) {
+                String assetsFilePath = assetsPath + "/" + fileName;
+                File destFile = new File(destDir, fileName);
+                try (InputStream in = assetManager.open(assetsFilePath);
+                     OutputStream out = new FileOutputStream(destFile)) {
+                    Log.d(TAG, "Copy " + assetsFilePath + " to " + destFile.getAbsolutePath() + " ...");
+                    copyFile(in, out);
+                    Log.d(TAG, "Copy " + assetsFilePath + " to " + destFile.getAbsolutePath() + " end");
+                } catch (Throwable e) {
+                    Log.e(TAG, "Error while copying file: " + e.getMessage());
+                    copyAssetsToInternalStorage(context, assetsFilePath, destinationPath + "/" + fileName);
+                }
+            }
+        }
+    }
+
+    private void copyFile(InputStream in, OutputStream out) throws IOException {
+        byte[] buffer = new byte[1024];
+        int read;
+        while ((read = in.read(buffer)) != -1) {
+            out.write(buffer, 0, read);
+        }
     }
 }

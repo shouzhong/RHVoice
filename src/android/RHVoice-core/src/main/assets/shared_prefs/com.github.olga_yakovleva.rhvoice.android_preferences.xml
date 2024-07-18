@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<map>
+    <boolean name="language.rus.detect" value="true" />
+    <int name="voice.aleksandr.version" value="4020" />
+    <boolean name="language.rus.use_pseudo_english" value="true" />
+    <boolean name="language.eng.detect" value="true" />
+    <int name="voice.bdl.version" value="4010" />
+    <boolean name="voice.bdl.enabled" value="true" />
+    <string name="quality">std</string>
+    <boolean name="voice.aleksandr.enabled" value="true" />
+    <int name="language.russian.version" value="2150" />
+    <boolean name="wifi_only" value="false" />
+    <int name="language.english.version" value="2110" />
+    <string name="language.eng.voice">BDL</string>
+    <string name="language.rus.voice">Aleksandr</string>
+</map>
